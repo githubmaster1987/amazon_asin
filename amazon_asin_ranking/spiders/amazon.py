@@ -146,8 +146,13 @@ class AmazonSpider(scrapy.Spider):
                 print('========================================')
                 print(total_count_str)
                 print(e)
+                with open("response.txt", 'w') as f:
+                    f.write(total_count_str)
+
                 with open("response.html", 'w') as f:
                     f.write(response.text)
+
+                return
 
             obj = {'category': self.categories[self.selected_category_index],
                    'url': response.meta['link'],
