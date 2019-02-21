@@ -188,7 +188,7 @@ class AmazonSpider(scrapy.Spider):
                 try:
                     db.session.execute(sql_query)
                     db.session.commit()
-                except Exception as e
+                except Exception as e:
                     db.session.rollback()
                     print(e)
 
