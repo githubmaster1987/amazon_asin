@@ -137,7 +137,7 @@ class AmazonSpider(scrapy.Spider):
                 '//span[@id="s-result-count"]//a/text()').extract())
 
             total_count = re.search(
-                "\s(\d+,?\d+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
+                "\s([\d,]+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
 
             total_count = total_count.replace(",", '')
 
@@ -185,8 +185,12 @@ class AmazonSpider(scrapy.Spider):
                         subCategory=VALUES(subCategory), status=VALUES(status), url=VALUES(url), total=VALUES(total)'.format(', '.join(values))
 
                 # print(sql_query)
-                db.session.execute(sql_query)
-                db.session.commit()
+                try:
+                    db.session.execute(sql_query)
+                    db.session.commit()
+                except Exception as e
+                    db.session.rollback()
+                    print(e)
 
                 self.queue_list = []
 
@@ -291,8 +295,11 @@ class AmazonSpider(scrapy.Spider):
 
             sql_query = 'INSERT INTO `Listing`(`asin`, `isbn10`, `ranking`) VALUES {} ON DUPLICATE KEY UPDATE asin=VALUES(asin), isbn10=VALUES(isbn10), ranking=VALUES(ranking)'.format(
                 ', '.join(values))
-
-            db.session.execute(sql_query)
-            db.session.commit()
+            try:
+                db.session.execute(sql_query)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(e)
 
             self.queue_list = []
