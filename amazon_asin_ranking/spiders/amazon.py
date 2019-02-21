@@ -144,6 +144,7 @@ class AmazonSpider(scrapy.Spider):
                 total_count = total_count.replace(",", '')
             except Exception as e:
                 print('========================================')
+                print(total_count_str)
                 print(e)
                 with open("response.html", 'w') as f:
                     f.write(response.text)
