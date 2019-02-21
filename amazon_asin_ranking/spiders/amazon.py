@@ -136,6 +136,14 @@ class AmazonSpider(scrapy.Spider):
             breadcrumbs = ':'.join(response.xpath(
                 '//span[@id="s-result-count"]//a/text()').extract())
 
+            if total_count_str is None:
+                print('========================================')
+                print(response.url)
+                with open("response.html", 'w') as f:
+                    f.write(response.text)
+
+                return
+
             total_count = None
             try:
                 total_count = re.search(
@@ -144,13 +152,11 @@ class AmazonSpider(scrapy.Spider):
                 total_count = total_count.replace(",", '')
             except Exception as e:
                 print('========================================')
+                print(response.url)
                 print(total_count_str)
                 print(e)
                 with open("response.txt", 'w') as f:
                     f.write(total_count_str)
-
-                with open("response.html", 'w') as f:
-                    f.write(response.text)
 
                 return
 
