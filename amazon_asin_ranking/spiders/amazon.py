@@ -109,7 +109,6 @@ class AmazonSpider(scrapy.Spider):
                     url,
                     self.parse_listing, self.headers)
                 yield req
-                break
 
     def parse_root_category(self, response):
         menu_lists = response.xpath(
