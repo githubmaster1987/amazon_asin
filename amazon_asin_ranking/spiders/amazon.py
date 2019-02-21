@@ -136,26 +136,17 @@ class AmazonSpider(scrapy.Spider):
             breadcrumbs = ':'.join(response.xpath(
                 '//span[@id="s-result-count"]//a/text()').extract())
 
-            total_count = re.search(
-                "\s([\d,]+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
+            total_count = None
+            try:
+                total_count = re.search(
+                    "\s([\d,]+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
 
-            total_count = total_count.replace(",", '')
-
-            # db_category = model.CategoryURL(
-            #     category=self.categories[self.selected_category_index],
-            #     # url=response.url,
-            #     url=response.meta['link'],
-            #     status=0,
-            #     total=int(total_count),
-            #     subCategory=breadcrumbs + ':' + response.meta['title']
-            # )
-
-            # try:
-            #     db.session.add(db_category)
-            #     db.session.commit()
-            # except Exception as e:
-            #     db.session.rollback()
-            #     print(e)
+                total_count = total_count.replace(",", '')
+            except Exception as e:
+                print('========================================')
+                print(e)
+                with open("response.html", 'w') as f:
+                    f.write(response.text)
 
             obj = {'category': self.categories[self.selected_category_index],
                    'url': response.meta['link'],
