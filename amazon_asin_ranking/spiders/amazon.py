@@ -44,6 +44,9 @@ class AmazonSpider(scrapy.Spider):
     proxy_lists = proxylist.proxies
     useragent_lists = useragent.user_agent_list
     queue_list = []
+    db_total_count = 0
+    db_scraped_count = 0
+    starttime = datetime.now()
 
     def set_proxies(self, url, callback, headers=None, proxy_url=None):
         if headers:
@@ -73,6 +76,8 @@ class AmazonSpider(scrapy.Spider):
         self.instance_index = int(instance_index)
 
     def start_requests(self):
+        self.starttime = datetime.now()
+
         if self.selected_category_index != -1:
             print(" -> Selected Category :",
                   self.categories[self.selected_category_index])
@@ -90,13 +95,13 @@ class AmazonSpider(scrapy.Spider):
             print(" -> Total DB Category :", total_len)
 
             url_list = []
-            total_count = 0
+            self.db_total_count = 0
             for i, db_item in enumerate(db_listing):
                 if (i > self.instance_index * total_len / self.instance_count) and (i < (self.instance_index + 1) * total_len / self.instance_count):
                     url_list.append(db_item.url)
-                    total_count += db_item.total
+                    self.db_total_count += db_item.total
 
-            print(" -> URL :", len(url_list), ", Total :", total_count)
+            print(" -> URL :", len(url_list), ", Total :", self.db_total_count)
 
             for url in url_list:
                 print(' ->', url)
@@ -269,6 +274,11 @@ class AmazonSpider(scrapy.Spider):
         # print(obj)
 
         self.queue_list.append(obj)
+        self.db_scraped_count += 1
+        deltatime = datetime.now() - self.starttime
+
+        print(' -----------> Time:', deltatime.__str__())
+        print(' -----------> DB Total: ', self.db_total_count, ' ---------> Scraped:', self.db_scraped_count)
 
         if len(self.queue_list) > randint(30, 100):
             print('------------------------> db saved',
