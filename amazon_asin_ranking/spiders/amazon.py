@@ -166,7 +166,9 @@ class AmazonSpider(scrapy.Spider):
             # print(obj)
 
             self.queue_list.append(obj)
-            print('++++++++++++++++++++++++++++++++++++++++++++')
+
+            deltatime = datetime.now() - self.starttime
+            print(' -----------> Time:', deltatime.__str__())
             print(len(self.queue_list))
 
             if len(self.queue_list) > randint(30, 50):
