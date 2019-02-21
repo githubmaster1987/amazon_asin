@@ -1,4 +1,4 @@
-
+import random
 proxy_username = "a"
 proxy_password = "a"
 
@@ -29,3 +29,7 @@ proxies = [
     '173.208.36.245:3128',
     '108.186.244.197:3128'
 ]
+
+
+def get_proxy():
+    return random.choice(proxies)

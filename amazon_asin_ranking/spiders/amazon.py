@@ -52,14 +52,15 @@ class AmazonSpider(scrapy.Spider):
         else:
             req = Request(url=url, callback=callback, dont_filter=True)
 
-        if proxy_url is not None:
-            print("++++++++++++++++++++++++")
-            print("Proxy", proxy_url)
+        # if proxy_url is not None:
+        proxy_url = proxylist.get_proxy()
+        # print("++++++++++++++++++++++++")
+        # print("Proxy", proxy_url)
 
-            user_pass = base64.encodestring('{}:{}'.format(
-                proxylist.proxy_username, proxylist.proxy_password).encode()).strip().decode('utf-8')
-            req.meta['proxy'] = "http://" + proxy_url
-            req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
+        user_pass = base64.encodestring('{}:{}'.format(
+            proxylist.proxy_username, proxylist.proxy_password).encode()).strip().decode('utf-8')
+        req.meta['proxy'] = "http://" + proxy_url
+        req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
         # user_agent = random.choice(self.useragent_lists)
         # req.headers['User-Agent'] = user_agent
