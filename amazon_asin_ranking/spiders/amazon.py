@@ -172,7 +172,7 @@ class AmazonSpider(scrapy.Spider):
             total_count = None
             try:
                 total_count = re.search(
-                    "\s([\d,]+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
+                    "([\d,]+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
 
                 total_count = total_count.replace(",", '')
             except Exception as e:
