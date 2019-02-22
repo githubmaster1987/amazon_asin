@@ -132,15 +132,25 @@ class AmazonSpider(scrapy.Spider):
         captcha = response.xpath(
             '//form[@action="/errors/validateCaptcha"]')
 
-        if captcha is not None:
+        if len(captcha) > 0:
             print("////////////////////////////////////////////")
+            print(captcha)
+            print(response.meta)
             print(response.url)
 
+            with open("captcha.html", 'w') as f:
+                f.write(response.text)
+
             req = self.set_proxies(
-                response.meta['link'],
+                response.url,
                 self.parse_second_category, self.headers)
-            req.meta['title'] = response.meta['title']
-            req.meta['link'] = response.meta['title']
+
+            if 'title' in response.meta.keys():
+                req.meta['title'] = response.meta['title']
+
+            if 'link' in response.meta.keys():
+                req.meta['link'] = response.meta['link']
+
             yield req
             return
 
