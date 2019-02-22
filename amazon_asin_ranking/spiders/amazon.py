@@ -129,6 +129,21 @@ class AmazonSpider(scrapy.Spider):
         menu_lists = response.xpath(
             '//ul[contains(@class, "a-unordered-list a-nostyle a-vertical s-ref-indent-two")]//li/span/a')
 
+        captcha = response.xpath(
+            '//form[@action="/errors/validateCaptcha"]')
+
+        if captcha is not None:
+            print("////////////////////////////////////////////")
+            print(response.url)
+
+            req = self.set_proxies(
+                response.meta['link'],
+                self.parse_second_category, self.headers)
+            req.meta['title'] = response.meta['title']
+            req.meta['link'] = response.meta['title']
+            yield req
+            return
+
         if len(menu_lists) == 0:
             total_count_str = response.xpath(
                 '//span[@id="s-result-count"]/text()').extract_first()
