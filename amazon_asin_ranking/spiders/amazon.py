@@ -2,7 +2,7 @@
 import scrapy
 import time
 import re
-from random import randint
+from random import randint, choice
 import base64
 import csv
 import os
@@ -55,18 +55,14 @@ class AmazonSpider(scrapy.Spider):
         else:
             req = Request(url=url, callback=callback, dont_filter=True)
 
-        # if proxy_url is not None:
         proxy_url = proxylist.get_proxy()
-        # print("++++++++++++++++++++++++")
-        # print("Proxy", proxy_url)
-
         user_pass = base64.encodestring('{}:{}'.format(
             proxylist.proxy_username, proxylist.proxy_password).encode()).strip().decode('utf-8')
         req.meta['proxy'] = "http://" + proxy_url
         req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
-        # user_agent = random.choice(self.useragent_lists)
-        # req.headers['User-Agent'] = user_agent
+        user_agent = choice(self.useragent_lists)
+        req.headers['User-Agent'] = user_agent
         return req
 
     def __init__(self, category_index=-1, instance_index=0, instance_count=10, *args, **kwargs):
@@ -239,10 +235,29 @@ class AmazonSpider(scrapy.Spider):
 
     def parse_listing(self, response):
         links = response.xpath(
-            "//a[contains(@class, 's-color-twister-title-link')]|//div[contains(@class, 's-result-item')]//h5/a[contains(@class, 'a-link-normal')]")
+            "//a[contains(@class, 's-color-twister-title-link')]|//div[contains(@class, 's-result-item')]//a[@title='product-detail']|//div[contains(@class, 's-result-item')]//h5/a[contains(@class, 'a-link-normal')]|//div[contains(@id, 'resultItems')]//a[contains(@class, 'a-link-normal')]")
         print("LEN = ", len(links))
 
+        captcha = response.xpath(
+            '//form[@action="/errors/validateCaptcha"]')
+
+        if len(captcha) > 0:
+            print('/////////////////////////////')
+            print(captcha)
+            print(response.url)
+            req = self.set_proxies(
+                response.url,
+                self.parse_listing, self.headers)
+
+            return
+
         if len(links) == 0:
+            print('??????????????????????????????')
+            print(response.url)
+
+            with open("link.html", 'w') as f:
+                f.write(response.text)
+
             return
 
         for link_item in links:
@@ -254,7 +269,7 @@ class AmazonSpider(scrapy.Spider):
             yield req
 
         nextPage = response.xpath(
-            "//a[@id='pagnNextLink']|li[@class='a-last']/a")
+            "//a[@id='pagnNextLink']|//li[@class='a-last']/a")
         if nextPage:
             nextPageLink = response.urljoin(
                 nextPage.xpath('@href').extract_first())
@@ -267,8 +282,21 @@ class AmazonSpider(scrapy.Spider):
             yield req
 
     def parse_detail_page(self, response):
+        captcha = response.xpath(
+            '//form[@action="/errors/validateCaptcha"]')
+
+        if len(captcha) > 0:
+            print('/////////////////////////////')
+            print(captcha)
+            print(response.url)
+            req = self.set_proxies(
+                response.url,
+                self.parse_detail_page, self.headers)
+
+            return
+
         isbn_10 = response.xpath(
-            '//div[@class="content"]/ul/li/b[contains(text(), "ISBN-10:")]/../text()').extract_first()
+            '//div[@class="content"]/ul/li/b[contains(text(), "ISBN-10:")]/../text()|//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "ISBN-10")]/../td/text()').extract_first()
 
         if isbn_10 is None:
             isbn_10 = ''
@@ -279,31 +307,57 @@ class AmazonSpider(scrapy.Spider):
         if asin is None:
             asin = ''
 
-        rankings = response.xpath('//li[@id="SalesRank"]/text()')
+        if (asin == '') and (isbn_10 == ''):
+            print('+++++++++++++++++++++++++++++++')
+            print(response.url)
+            print('-----Asin----', asin, isbn_10)
 
-        ranking = None
-        for ranking_item in rankings.extract():
-            ranking_str = ranking_item.strip()
+            with open("empty.html", 'w') as f:
+                f.write(response.text)
 
-            if 'in Books' in ranking_str:
-                ranking = re.search(
-                    "#([\d,]+)\sin", ranking_str, re.I | re.S | re.M).group(1)
-                ranking = ranking.replace(",", '')
-                break
-            elif 'Paid in' in ranking_str:
-                # print('+++++++++++++++++++++++', ranking_str)
-                link = response.urljoin(response.xpath(
-                    '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Paperback")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Hardcover")]/../@href').extract_first())
+        td_ranking = response.xpath(
+            '//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "Best Sellers Rank")]/../td/text()').extract_first()
 
-                req = self.set_proxies(
-                    link,
-                    self.parse_detail_page, self.headers)
+        if td_ranking is not None:
+            ranking = td_ranking.replace(",", '')
+        else:
+            rankings = response.xpath('//li[@id="SalesRank"]/text()')
 
-                yield req
+            ranking_list = []
+            ranking = None
+            for ranking_item in rankings.extract():
+                ranking_str = ranking_item.strip()
+                ranking_list.append(ranking_str)
 
+                if 'in Books' in ranking_str:
+                    ranking = re.search(
+                        "#([\d,]+)\sin", ranking_str, re.I | re.S | re.M).group(1)
+                    ranking = ranking.replace(",", '')
+                    break
+                elif 'Paid in' in ranking_str:
+                    # print('+++++++++++++++++++++++', ranking_str)
+                    link = response.urljoin(response.xpath(
+                        '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Paperback")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Hardcover")]/../@href').extract_first())
+
+                    req = self.set_proxies(
+                        link,
+                        self.parse_detail_page, self.headers)
+
+                    yield req
+
+                    return
+
+            if ranking is None:
+                print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+                print(response.url)
+                print(ranking_list)
+
+                with open("empty1.html", 'w') as f:
+                    f.write(response.text)
                 return
 
-        obj = {'asin': asin, 'isbn_10': isbn_10, "ranking": ranking}
+        obj = {'asin': asin.strip(), 'isbn_10': isbn_10.strip(),
+               "ranking": ranking.strip()}
         # print(obj)
 
         self.queue_list.append(obj)
@@ -311,7 +365,8 @@ class AmazonSpider(scrapy.Spider):
         deltatime = datetime.now() - self.starttime
 
         print(' -----------> Time:', deltatime.__str__())
-        print(' -----------> DB Total: ', self.db_total_count, ' ---------> Scraped:', self.db_scraped_count)
+        print(' -----------> DB Total: ', self.db_total_count,
+              ' ---------> Scraped:', self.db_scraped_count)
 
         if len(self.queue_list) > randint(30, 100):
             print('------------------------> db saved',
