@@ -81,6 +81,19 @@ class AmazonSpider(scrapy.Spider):
         self.is_category = int(is_category)
 
     def start_requests(self):
+        processname = "scrapy crawl amazon -a category_index={} -a instance_index={} -a instance_count={}".format(self.selected_category_index, self.instance_index, self.instance_count)
+        print('++++++++++++++++++++++++++')
+        print(processname)
+
+        tmp = os.popen("ps -Af").read()
+
+        proccount = tmp.count(processname)
+
+        if proccount > 1:
+            print(proccount, ' processes running of ', processname, 'type')
+            print('+++++++++++++++++++++++++++++++++++++++++++++++++')
+            return
+
         self.starttime = datetime.now()
 
         if self.is_category == 1:
