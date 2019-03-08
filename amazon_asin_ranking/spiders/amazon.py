@@ -78,7 +78,7 @@ class AmazonSpider(scrapy.Spider):
         self.selected_category_index = int(category_index)
         self.instance_count = int(instance_count)
         self.instance_index = int(instance_index)
-        self.is_category = is_category
+        self.is_category = int(is_category)
 
     def start_requests(self):
         self.starttime = datetime.now()
