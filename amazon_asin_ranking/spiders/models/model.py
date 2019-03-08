@@ -57,3 +57,53 @@ class Listing(db.Model):
             'isbn_10': self.isbn_10,
             'ranking': self.ranking
         }
+
+
+class ListingCD(db.Model):
+    __tablename__ = "ListingCD"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    asin = db.Column(db.String(100))
+    isbn_10 = db.Column(db.String(100))
+    ranking = db.Column(db.String(50))
+
+    def __init__(self,
+                 asin,
+                 isbn_10,
+                 ranking
+                 ):
+        self.asin = asin
+        self.isbn_10 = isbn_10
+        self.ranking = ranking
+
+    def serialize(self):
+        return {
+            'asin': self.asin,
+            'isbn_10': self.isbn_10,
+            'ranking': self.ranking
+        }
+
+
+class ListingDVD(db.Model):
+    __tablename__ = "ListingDVD"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    asin = db.Column(db.String(100))
+    isbn_10 = db.Column(db.String(100))
+    ranking = db.Column(db.String(50))
+
+    def __init__(self,
+                 asin,
+                 isbn_10,
+                 ranking
+                 ):
+        self.asin = asin
+        self.isbn_10 = isbn_10
+        self.ranking = ranking
+
+    def serialize(self):
+        return {
+            'asin': self.asin,
+            'isbn_10': self.isbn_10,
+            'ranking': self.ranking
+        }

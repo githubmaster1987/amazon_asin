@@ -27,10 +27,14 @@ class AmazonSpider(scrapy.Spider):
     selected_category_index = 0
     categories = [
         'Book',
+        'CD',
+        'DVD'
     ]
 
     category_root_urls = [
         'https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dstripbooks&field-keywords=',
+        'https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dpopular&field-keywords=',
+        'https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dmovies-tv&field-keywords='
     ]
 
     headers = {
@@ -40,6 +44,10 @@ class AmazonSpider(scrapy.Spider):
         "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "gzip, deflate, br",
     }
+
+    CATEGORY_BOOK = 0
+    CATEGORY_CD = 1
+    CATEGORY_DVD = 2
 
     proxy_lists = proxylist.proxies
     useragent_lists = useragent.user_agent_list
@@ -65,27 +73,30 @@ class AmazonSpider(scrapy.Spider):
         req.headers['User-Agent'] = user_agent
         return req
 
-    def __init__(self, category_index=-1, instance_index=0, instance_count=10, *args, **kwargs):
+    def __init__(self, category_index=0, instance_index=0, instance_count=10, is_category=0, *args, **kwargs):
         super(AmazonSpider, self).__init__(*args, **kwargs)
         self.selected_category_index = int(category_index)
         self.instance_count = int(instance_count)
         self.instance_index = int(instance_index)
+        self.is_category = is_category
 
     def start_requests(self):
         self.starttime = datetime.now()
 
-        if self.selected_category_index != -1:
-            print(" -> Selected Category :",
-                  self.categories[self.selected_category_index])
-            print(" -> Selected Category URL :",
-                  self.category_root_urls[self.selected_category_index])
+        if self.is_category == 1:
+            if self.selected_category_index != -1:
+                print(" -> Selected Category :",
+                      self.categories[self.selected_category_index])
+                print(" -> Selected Category URL :",
+                      self.category_root_urls[self.selected_category_index])
 
-            req = self.set_proxies(
-                self.category_root_urls[self.selected_category_index],
-                self.parse_root_category, self.headers)
-            yield req
+                req = self.set_proxies(
+                    self.category_root_urls[self.selected_category_index],
+                    self.parse_root_category, self.headers)
+                yield req
         else:
-            db_listing = db.session.query(model.CategoryURL).all()
+            db_listing = db.session.query(model.CategoryURL).filter(
+                model.CategoryURL.category == self.categories[self.selected_category_index]).all()
             total_len = len(db_listing)
 
             print(" -> Total DB Category :", total_len)
@@ -107,17 +118,30 @@ class AmazonSpider(scrapy.Spider):
                 yield req
 
     def parse_root_category(self, response):
+        root_menu_xpath = '//ul[contains(@class, "a-unordered-list a-nostyle a-vertical s-ref-indent-one")]//li/span/a'
+
+        if self.selected_category_index == self.CATEGORY_CD:
+            root_menu_xpath = '//h3[contains(text(), "Browse by Genre")]/following-sibling::ul[1]/li/a'
+        elif self.selected_category_index == self.CATEGORY_DVD:
+            root_menu_xpath = '//h3[contains(text(), "Popular Genres")]/following-sibling::ul[1]/li/a'
         menu_lists = response.xpath(
-            '//ul[contains(@class, "a-unordered-list a-nostyle a-vertical s-ref-indent-one")]//li/span/a')
+            root_menu_xpath)
 
         for obj in menu_lists:
-            # title = obj.xpath("span/text()").extract_first("")
-            link = response.urljoin(obj.xpath("@href").extract_first(""))
+            title = obj.xpath("span/text()").extract_first("")
 
-            # print(title, link)
+            if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
+                title = obj.xpath("text()").extract_first("")
+
+            link = response.urljoin(obj.xpath("@href").extract_first(""))
+            # print('---------------------------> ', title, link)
             req = self.set_proxies(
                 link,
                 self.parse_second_category, self.headers)
+
+            if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
+                req.meta["title"] = title
+                req.meta["link"] = link
 
             yield req
 
@@ -155,13 +179,40 @@ class AmazonSpider(scrapy.Spider):
                 '//span[@id="s-result-count"]/text()').extract_first()
 
             breadcrumbs = ':'.join(response.xpath(
-                '//span[@id="s-result-count"]//a/text()').extract())
+                '//span[@id="s-result-count"]//a/text()').extract()).strip()
+
+            print('???????????????????? RESPONSE ?????????????????????')
+            print(response.meta)
+
+            if self.selected_category_index == self.CATEGORY_DVD:
+                if breadcrumbs == "":
+                    breadcrumbs = "Movies & TV"
+
+            # print(breadcrumbs)
 
             if total_count_str is None:
-                print('========================================')
+                total_count_str = ''.join(response.xpath(
+                    '//span[@data-component-type="s-result-info-bar"]//div[not(@class="right")]/span/text()').extract()).strip()
+                print('******************* Small Total *******************')
+                print(total_count_str)
+
+            if (total_count_str is None) or (total_count_str == ""):
+                print('================= total is none =======================')
                 print(response.url)
                 with open("response.html", 'w') as f:
                     f.write(response.text)
+
+                # req = self.set_proxies(
+                # response.url,
+                #     self.parse_second_category, self.headers)
+
+                # if 'title' in response.meta.keys():
+                #     req.meta['title'] = response.meta['title']
+
+                # if 'link' in response.meta.keys():
+                #     req.meta['link'] = response.meta['link']
+
+                # yield req
 
                 return
 
@@ -172,7 +223,7 @@ class AmazonSpider(scrapy.Spider):
 
                 total_count = total_count.replace(",", '')
             except Exception as e:
-                print('========================================')
+                print('================== total count exception ======================')
                 print(response.url)
                 print(total_count_str)
                 print(e)
@@ -181,11 +232,34 @@ class AmazonSpider(scrapy.Spider):
 
                 return
 
+            if 'link' in response.meta.keys():
+                category_url = response.meta['link']
+            else:
+                category_url = response.url
+
+            if 'title' in response.meta.keys():
+                category_title = response.meta['title']
+            else:
+                print('================ dvd title is none ========================')
+                print(response.url)
+                with open("title.html", 'w') as f:
+                    f.write(response.text)
+
+                return
+
+            if category_title == "":
+                print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                print(response.url)
+                with open("title.html", 'w') as f:
+                    f.write(response.text)
+
+                return
+
             obj = {'category': self.categories[self.selected_category_index],
-                   'url': response.meta['link'],
+                   'url': category_url,
                    "status": 0,
                    'total': int(total_count),
-                   'subCategory': breadcrumbs + ':' + response.meta['title']
+                   'subCategory': breadcrumbs + ':' + category_title
                    }
             # print(obj)
 
@@ -195,9 +269,8 @@ class AmazonSpider(scrapy.Spider):
             print(' -----------> Time:', deltatime.__str__())
             print(len(self.queue_list))
 
-            if len(self.queue_list) > randint(30, 50):
-                print('------------------------> db saved',
-                      self.queue_list[0]["subCategory"])
+            # if len(self.queue_list) > randint(30, 50):
+            if len(self.queue_list) > 0:
                 values = []
                 for d in self.queue_list:
                     values.append('("{}", "{}", {}, {}, "{}")'.format(
@@ -212,7 +285,11 @@ class AmazonSpider(scrapy.Spider):
                 try:
                     db.session.execute(sql_query)
                     db.session.commit()
+
+                    print('------------------------> db saved',
+                          self.queue_list[0]["subCategory"])
                 except Exception as e:
+                    print('\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
                     db.session.rollback()
                     print(e)
 
@@ -282,6 +359,8 @@ class AmazonSpider(scrapy.Spider):
             yield req
 
     def parse_detail_page(self, response):
+        # print('??????????????????????????????? Detail ?????????????????????????????')
+        # print(response.url)
         captcha = response.xpath(
             '//form[@action="/errors/validateCaptcha"]')
 
@@ -302,7 +381,7 @@ class AmazonSpider(scrapy.Spider):
             isbn_10 = ''
 
         asin = response.xpath(
-            '//div[@class="content"]/ul/li/b[contains(text(), "ASIN:")]/../text()').extract_first()
+            '//div[@class="content"]/ul/li/b[contains(text(), "ASIN:")]/../text()|//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "ASIN")]/../td/text()').extract_first()
 
         if asin is None:
             asin = ''
@@ -318,6 +397,9 @@ class AmazonSpider(scrapy.Spider):
         td_ranking = response.xpath(
             '//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "Best Sellers Rank")]/../td/text()').extract_first()
 
+        # print('??????????????????????????????? Asin ?????????????????????????????')
+        # print(asin, td_ranking)
+
         if td_ranking is not None:
             ranking = td_ranking.replace(",", '')
         else:
@@ -329,15 +411,29 @@ class AmazonSpider(scrapy.Spider):
                 ranking_str = ranking_item.strip()
                 ranking_list.append(ranking_str)
 
-                if 'in Books' in ranking_str:
+                ranking_category_string = 'in Books'
+
+                if self.selected_category_index == self.CATEGORY_CD:
+                    ranking_category_string = 'in CDs & Vinyl'
+                elif self.selected_category_index == self.CATEGORY_DVD:
+                    ranking_category_string = 'in Movies & TV'
+
+                if ranking_category_string in ranking_str:
                     ranking = re.search(
                         "#([\d,]+)\sin", ranking_str, re.I | re.S | re.M).group(1)
                     ranking = ranking.replace(",", '')
                     break
                 elif 'Paid in' in ranking_str:
                     # print('+++++++++++++++++++++++', ranking_str)
-                    link = response.urljoin(response.xpath(
-                        '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Paperback")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Hardcover")]/../@href').extract_first())
+                    if self.selected_category_index == self.CATEGORY_BOOK:
+                        link = response.urljoin(response.xpath(
+                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Paperback")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Hardcover")]/../@href').extract_first())
+                    elif self.selected_category_index == self.CATEGORY_CD:
+                        link = response.urljoin(response.xpath(
+                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Audio CD")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Vinyl") and not(contains(text(), "Vinyl Bound"))]/../@href').extract_first())
+                    elif self.selected_category_index == self.CATEGORY_DVD:
+                        link = response.urljoin(response.xpath(
+                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Multi-Format")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "3D")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "DVD")]/../@href').extract_first())
 
                     req = self.set_proxies(
                         link,
@@ -347,7 +443,7 @@ class AmazonSpider(scrapy.Spider):
 
                     return
 
-            if ranking is None:
+            if (ranking is None) or (ranking == ""):
                 print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
                 print(response.url)
                 print(ranking_list)
@@ -358,7 +454,11 @@ class AmazonSpider(scrapy.Spider):
 
         obj = {'asin': asin.strip(), 'isbn_10': isbn_10.strip(),
                "ranking": ranking.strip()}
-        # print(obj)
+
+        if (obj["asin"] == "") and (obj["isbn_10"] == ""):
+            print('>>>>>>>>>>>>>>>>>>>>> Empty >>>>>>>>>>>>>>>>>>>>')
+            print(obj)
+            return
 
         self.queue_list.append(obj)
         self.db_scraped_count += 1
@@ -368,16 +468,24 @@ class AmazonSpider(scrapy.Spider):
         print(' -----------> DB Total: ', self.db_total_count,
               ' ---------> Scraped:', self.db_scraped_count)
 
-        if len(self.queue_list) > randint(30, 100):
+        # if len(self.queue_list) > randint(30, 100):
+        if len(self.queue_list) > 0:
             print('------------------------> db saved',
-                  self.queue_list[0]["asin"], self.queue_list[0]["isbn_10"])
+                  self.queue_list[0]["asin"], self.queue_list[0]["isbn_10"], self.queue_list[0]["ranking"])
             values = []
             for d in self.queue_list:
                 values.append('("{}", "{}", "{}")'.format(
                     d["asin"], d["isbn_10"], d["ranking"]))
 
-            sql_query = 'INSERT INTO `Listing`(`asin`, `isbn10`, `ranking`) VALUES {} ON DUPLICATE KEY UPDATE asin=VALUES(asin), isbn10=VALUES(isbn10), ranking=VALUES(ranking)'.format(
-                ', '.join(values))
+            table_name = "Listing"
+
+            if self.selected_category_index == self.CATEGORY_CD:
+                table_name = "ListingCD"
+            elif self.selected_category_index == self.CATEGORY_DVD:
+                table_name = "ListingDVD"
+
+            sql_query = 'INSERT INTO `{}`(`asin`, `isbn10`, `ranking`) VALUES {} ON DUPLICATE KEY UPDATE asin=VALUES(asin), isbn10=VALUES(isbn10), ranking=VALUES(ranking)'.format(table_name,
+                                                                                                                                                                                   ', '.join(values))
             try:
                 db.session.execute(sql_query)
                 db.session.commit()
@@ -386,3 +494,6 @@ class AmazonSpider(scrapy.Spider):
                 print(e)
 
             self.queue_list = []
+
+
+# https://www.amazon.com/Toy-Story-Blu-ray-Tom-Hanks/dp/B00275EHJQ/ref=lp_712256_1_1_sspa/130-7274635-2308352?s=movies-tv&ie=UTF8&qid=1552048730&sr=1-1-spons&psc=1&smid=A3V1KLU0LMW5KE
