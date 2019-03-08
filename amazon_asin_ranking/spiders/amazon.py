@@ -82,6 +82,10 @@ class AmazonSpider(scrapy.Spider):
 
     def start_requests(self):
         processname = "scrapy crawl amazon -a category_index={} -a instance_index={} -a instance_count={}".format(self.selected_category_index, self.instance_index, self.instance_count)
+
+        if self.is_category == 1:
+            processname = "scrapy crawl amazon -a category_index={} -a is_category=1".format(self.selected_category_index)
+
         print('++++++++++++++++++++++++++')
         print(processname)
 
@@ -282,8 +286,8 @@ class AmazonSpider(scrapy.Spider):
             print(' -----------> Time:', deltatime.__str__())
             print(len(self.queue_list))
 
-            # if len(self.queue_list) > randint(30, 50):
-            if len(self.queue_list) > 0:
+            if len(self.queue_list) > randint(30, 50):
+            # if len(self.queue_list) > 0:
                 values = []
                 for d in self.queue_list:
                     values.append('("{}", "{}", {}, {}, "{}")'.format(
@@ -481,8 +485,8 @@ class AmazonSpider(scrapy.Spider):
         print(' -----------> DB Total: ', self.db_total_count,
               ' ---------> Scraped:', self.db_scraped_count)
 
-        # if len(self.queue_list) > randint(30, 100):
-        if len(self.queue_list) > 0:
+        if len(self.queue_list) > randint(30, 100):
+        # if len(self.queue_list) > 0:
             print('------------------------> db saved',
                   self.queue_list[0]["asin"], self.queue_list[0]["isbn_10"], self.queue_list[0]["ranking"])
             values = []
