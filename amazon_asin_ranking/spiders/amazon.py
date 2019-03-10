@@ -49,6 +49,9 @@ class AmazonSpider(scrapy.Spider):
     CATEGORY_CD = 1
     CATEGORY_DVD = 2
 
+    MAX_RANKING_BOOK = 2000000
+    MAX_RANKING_CD_DVD = 280000
+
     proxy_lists = proxylist.proxies
     useragent_lists = useragent.user_agent_list
     queue_list = []
@@ -477,6 +480,15 @@ class AmazonSpider(scrapy.Spider):
             print(obj)
             return
 
+        if self.selected_category_index == self.CATEGORY_BOOK:
+            if (int(obj["ranking"]) >= self.MAX_RANKING_BOOK):
+                print('???????????????? MAX RANKING REACHED ????????????????', obj["ranking"])
+                return
+        elif (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
+            if (int(obj["ranking"]) >= self.MAX_RANKING_CD_DVD):
+                print('???????????????? MAX RANKING REACHED ????????????????', obj["ranking"])
+                return
+
         self.queue_list.append(obj)
         self.db_scraped_count += 1
         deltatime = datetime.now() - self.starttime
@@ -514,3 +526,4 @@ class AmazonSpider(scrapy.Spider):
 
 
 # https://www.amazon.com/Toy-Story-Blu-ray-Tom-Hanks/dp/B00275EHJQ/ref=lp_712256_1_1_sspa/130-7274635-2308352?s=movies-tv&ie=UTF8&qid=1552048730&sr=1-1-spons&psc=1&smid=A3V1KLU0LMW5KE
+# B00004WGE7 2011593
