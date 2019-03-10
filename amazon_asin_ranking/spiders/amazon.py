@@ -494,6 +494,7 @@ class AmazonSpider(scrapy.Spider):
         deltatime = datetime.now() - self.starttime
 
         print(' -----------> Time:', deltatime.__str__())
+        print(' -----------> Obj:', obj["ranking"], self.selected_category_index)
         print(' -----------> DB Total: ', self.db_total_count,
               ' ---------> Scraped:', self.db_scraped_count)
 
