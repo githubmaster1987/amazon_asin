@@ -131,7 +131,7 @@ class AmazonSpider(scrapy.Spider):
             print(" -> URL :", len(url_list), ", Total :", self.db_total_count)
 
             for url in url_list:
-                if self.selected_category_index == self.CATEGORY_BOOK:
+                if self.selected_category_index == self.CATEGORY_DVD:
                     url = url + "&rh=p_n_format_browse-bin:2650304011|2650305011"
                 print(' ->', url)
                 req = self.set_proxies(
