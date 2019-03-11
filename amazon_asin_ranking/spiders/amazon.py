@@ -132,6 +132,9 @@ class AmazonSpider(scrapy.Spider):
 
             for url in url_list:
                 print(' ->', url)
+                if self.selected_category_index == self.CATEGORY_BOOK:
+                    url = url + "&rh=p_n_format_browse-bin:2650304011|2650305011"
+
                 req = self.set_proxies(
                     url,
                     self.parse_listing, self.headers)
