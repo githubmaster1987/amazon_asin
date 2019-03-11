@@ -49,6 +49,8 @@ class AmazonSpider(scrapy.Spider):
     CATEGORY_CD = 1
     CATEGORY_DVD = 2
 
+    url_attach = "&rh=p_n_format_browse-bin:2650304011|2650305011|2650307011|2650308011"
+
     MAX_RANKING_BOOK = 2000000
     MAX_RANKING_CD_DVD = 280000
 
@@ -132,7 +134,7 @@ class AmazonSpider(scrapy.Spider):
 
             for url in url_list:
                 if self.selected_category_index == self.CATEGORY_DVD:
-                    url = url + "&rh=p_n_format_browse-bin:2650304011|2650305011|2650307011|2650308011"
+                    url = url + self.url_attach
                 print(' ->', url)
                 req = self.set_proxies(
                     url,
@@ -372,6 +374,9 @@ class AmazonSpider(scrapy.Spider):
         if nextPage:
             nextPageLink = response.urljoin(
                 nextPage.xpath('@href').extract_first())
+
+            if self.selected_category_index == self.CATEGORY_DVD:
+                nextPageLink = nextPageLink + self.url_attach
             print('--------------->', nextPageLink)
 
             self.headers["Refer"] = response.url
