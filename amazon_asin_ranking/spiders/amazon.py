@@ -132,7 +132,7 @@ class AmazonSpider(scrapy.Spider):
 
             for url in url_list:
                 if self.selected_category_index == self.CATEGORY_DVD:
-                    url = url + "&rh=p_n_format_browse-bin:2650304011|2650305011"
+                    url = url + "&rh=p_n_format_browse-bin:2650304011|2650305011|2650307011|2650308011"
                 print(' ->', url)
                 req = self.set_proxies(
                     url,
