@@ -75,7 +75,7 @@ class AmazonSpider(scrapy.Spider):
         req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
         user_agent = choice(self.useragent_lists)
-        req.headers['User-Agent'] = user_agent
+        # req.headers['User-Agent'] = user_agent
         return req
 
     def __init__(self, category_index=0, instance_index=0, instance_count=10, is_category=0, *args, **kwargs):
@@ -86,6 +86,20 @@ class AmazonSpider(scrapy.Spider):
         self.is_category = int(is_category)
 
     def start_requests(self):
+        # url = "https://www.amazon.com/Iron-Man-Movie-Collection-Blu-ray/dp/B00FFBA87E/ref=sr_1_36?fst=as%3Aoff&qid=1552360042&refinements=p_n_theme_browse-bin%3A2650363011%2Cp_n_format_browse-bin%3A2650304011%7C2650305011%7C2650307011&rnid=2650303011&s=movies-tv&sr=1-36"
+        # req = self.set_proxies(
+        #         url,
+        #         self.parse_detail_page, self.headers)
+        # yield req
+        # return
+
+        # url = "https://www.amazon.com/action-adventure-dvd-bluray/b/ref=MoviesHPBB_Genres_Action?ie=UTF8&node=2650363011&pf_rd_m=ATVPDKIKX0DER&pf_rd_s=merchandised-search-left-2&pf_rd_r=MW0YJFW2D2W4RPM07G4X&pf_rd_r=MW0YJFW2D2W4RPM07G4X&pf_rd_t=101&pf_rd_p=d175e841-d695-46c7-a5ed-72ccc2f58f7d&pf_rd_p=d175e841-d695-46c7-a5ed-72ccc2f58f7d&pf_rd_i=2921756011" + self.url_attach
+        # req = self.set_proxies(
+        #     url,
+        #     self.parse_listing, self.headers)
+        # yield req
+        # return
+
         processname = "scrapy crawl amazon -a category_index={} -a instance_index={} -a instance_count={}".format(self.selected_category_index, self.instance_index, self.instance_count)
 
         if self.is_category == 1:
@@ -158,7 +172,7 @@ class AmazonSpider(scrapy.Spider):
                 title = obj.xpath("text()").extract_first("")
 
             link = response.urljoin(obj.xpath("@href").extract_first(""))
-            # print('---------------------------> ', title, link)
+            print('---------------------------> ', title, link)
             req = self.set_proxies(
                 link,
                 self.parse_second_category, self.headers)
@@ -285,7 +299,7 @@ class AmazonSpider(scrapy.Spider):
                    'total': int(total_count),
                    'subCategory': breadcrumbs + ':' + category_title
                    }
-            # print(obj)
+            print(obj)
 
             self.queue_list.append(obj)
 
@@ -445,6 +459,7 @@ class AmazonSpider(scrapy.Spider):
                 elif self.selected_category_index == self.CATEGORY_DVD:
                     ranking_category_string = 'in Movies & TV'
 
+                print(ranking_str, ranking_category_string)
                 if ranking_category_string in ranking_str:
                     ranking = re.search(
                         "#([\d,]+)\sin", ranking_str, re.I | re.S | re.M).group(1)
@@ -501,7 +516,7 @@ class AmazonSpider(scrapy.Spider):
         deltatime = datetime.now() - self.starttime
 
         print(' -----------> Time:', deltatime.__str__())
-        print(' -----------> Obj:', obj["ranking"], self.selected_category_index)
+        print(' -----------> Obj:', obj["ranking"], obj["asin"], self.selected_category_index)
         print(' -----------> DB Total: ', self.db_total_count,
               ' ---------> Scraped:', self.db_scraped_count)
 
