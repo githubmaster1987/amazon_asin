@@ -71,8 +71,8 @@ class AmazonSpider(scrapy.Spider):
         proxy_url = proxylist.get_proxy()
         user_pass = base64.encodestring('{}:{}'.format(
             proxylist.proxy_username, proxylist.proxy_password).encode()).strip().decode('utf-8')
-        # req.meta['proxy'] = "http://" + proxy_url
-        # req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
+        req.meta['proxy'] = "http://" + proxy_url
+        req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
         user_agent = choice(self.useragent_lists)
         # req.headers['User-Agent'] = user_agent
