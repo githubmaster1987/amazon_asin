@@ -161,7 +161,7 @@ class AmazonSpider(scrapy.Spider):
         if self.selected_category_index == self.CATEGORY_CD:
             root_menu_xpath = '//h3[contains(text(), "Browse by Genre")]/following-sibling::ul[1]/li/a'
         elif self.selected_category_index == self.CATEGORY_DVD:
-            root_menu_xpath = '//h3[contains(text(), "Popular Genres")]/following-sibling::ul[1]/li/a'
+            root_menu_xpath = '//h3[contains(text(), "Popular Genres")]/following-sibling::ul[1]/li/a|//h3[contains(text(), "Formats")]/following-sibling::ul[1]/li/a'
         menu_lists = response.xpath(
             root_menu_xpath)
 
