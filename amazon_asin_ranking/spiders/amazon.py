@@ -119,6 +119,9 @@ class AmazonSpider(scrapy.Spider):
 
         self.starttime = datetime.now()
 
+        if self.selected_category_index == self.CATEGORY_CD:
+            self.url_attach = "&rh=p_n_binding_browse-bin:387645011|387647011"
+
         if self.is_category == 1:
             if self.selected_category_index != -1:
                 print(" -> Selected Category :",
@@ -147,7 +150,7 @@ class AmazonSpider(scrapy.Spider):
             print(" -> URL :", len(url_list), ", Total :", self.db_total_count)
 
             for url in url_list:
-                if self.selected_category_index == self.CATEGORY_DVD:
+                if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
                     url = url + self.url_attach
                 print(' ->', url)
                 req = self.set_proxies(
@@ -161,7 +164,7 @@ class AmazonSpider(scrapy.Spider):
         if self.selected_category_index == self.CATEGORY_CD:
             root_menu_xpath = '//h3[contains(text(), "Browse by Genre")]/following-sibling::ul[1]/li/a'
         elif self.selected_category_index == self.CATEGORY_DVD:
-            root_menu_xpath = '//h3[contains(text(), "Popular Genres")]/following-sibling::ul[1]/li/a|//h3[contains(text(), "Formats")]/following-sibling::ul[1]/li/a'
+            root_menu_xpath = '//h3[contains(text(), "Popular Genres")]/following-sibling::ul[1]/li/a|//h3[contains(text(), "Formats")]/following-sibling::ul[1]/li/a|//h3[contains(text(), "Departments")]/following-sibling::ul[1]/li/a'
         menu_lists = response.xpath(
             root_menu_xpath)
 
@@ -173,7 +176,7 @@ class AmazonSpider(scrapy.Spider):
 
             link = response.urljoin(obj.xpath("@href").extract_first(""))
 
-            if self.selected_category_index == self.CATEGORY_DVD:
+            if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
                 link = link + self.url_attach
 
             print('---------------------------> ', title, link)
@@ -392,7 +395,7 @@ class AmazonSpider(scrapy.Spider):
             nextPageLink = response.urljoin(
                 nextPage.xpath('@href').extract_first())
 
-            if self.selected_category_index == self.CATEGORY_DVD:
+            if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
                 nextPageLink = nextPageLink + self.url_attach
             print('--------------->', nextPageLink)
 
