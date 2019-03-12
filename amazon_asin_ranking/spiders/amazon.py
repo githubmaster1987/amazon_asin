@@ -222,12 +222,6 @@ class AmazonSpider(scrapy.Spider):
             print('???????????????????? RESPONSE ?????????????????????')
             print(response.meta)
 
-            if self.selected_category_index == self.CATEGORY_DVD:
-                if breadcrumbs == "":
-                    breadcrumbs = "Movies & TV"
-
-            # print(breadcrumbs)
-
             if total_count_str is None:
                 total_count_str = ''.join(response.xpath(
                     '//span[@data-component-type="s-result-info-bar"]//div[not(@class="right")]/span/text()').extract()).strip()
@@ -293,11 +287,16 @@ class AmazonSpider(scrapy.Spider):
 
                 return
 
+            subCategory_str = breadcrumbs + ':' + category_title
+
+            if self.selected_category_index == self.CATEGORY_DVD:
+                subCategory_str = response.xpath('//title/text()').extract_first()
+
             obj = {'category': self.categories[self.selected_category_index],
                    'url': category_url,
                    "status": 0,
                    'total': int(total_count),
-                   'subCategory': breadcrumbs + ':' + category_title
+                   'subCategory': subCategory_str
                    }
             print(obj)
 
