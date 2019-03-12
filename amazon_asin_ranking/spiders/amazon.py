@@ -171,7 +171,11 @@ class AmazonSpider(scrapy.Spider):
             if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
                 title = obj.xpath("text()").extract_first("")
 
-            link = response.urljoin(obj.xpath("@href").extract_first("")) + self.url_attach
+            link = response.urljoin(obj.xpath("@href").extract_first(""))
+
+            if self.selected_category_index == self.CATEGORY_DVD:
+                link = link + self.url_attach
+
             print('---------------------------> ', title, link)
             req = self.set_proxies(
                 link,
