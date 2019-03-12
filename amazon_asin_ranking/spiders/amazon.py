@@ -71,8 +71,8 @@ class AmazonSpider(scrapy.Spider):
         proxy_url = proxylist.get_proxy()
         user_pass = base64.encodestring('{}:{}'.format(
             proxylist.proxy_username, proxylist.proxy_password).encode()).strip().decode('utf-8')
-        req.meta['proxy'] = "http://" + proxy_url
-        req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
+        # req.meta['proxy'] = "http://" + proxy_url
+        # req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
         user_agent = choice(self.useragent_lists)
         # req.headers['User-Agent'] = user_agent
@@ -171,7 +171,7 @@ class AmazonSpider(scrapy.Spider):
             if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
                 title = obj.xpath("text()").extract_first("")
 
-            link = response.urljoin(obj.xpath("@href").extract_first(""))
+            link = response.urljoin(obj.xpath("@href").extract_first("")) + self.url_attach
             print('---------------------------> ', title, link)
             req = self.set_proxies(
                 link,
@@ -289,7 +289,7 @@ class AmazonSpider(scrapy.Spider):
 
             subCategory_str = breadcrumbs + ':' + category_title
 
-            if self.selected_category_index == self.CATEGORY_DVD:
+            if (self.selected_category_index == self.CATEGORY_DVD) or (self.selected_category_index == self.CATEGORY_CD):
                 subCategory_str = response.xpath('//title/text()').extract_first()
 
             obj = {'category': self.categories[self.selected_category_index],
@@ -306,8 +306,8 @@ class AmazonSpider(scrapy.Spider):
             print(' -----------> Time:', deltatime.__str__())
             print(len(self.queue_list))
 
-            if len(self.queue_list) > randint(30, 50):
-            # if len(self.queue_list) > 0:
+            # if len(self.queue_list) > randint(30, 50):
+            if len(self.queue_list) > 0:
                 values = []
                 for d in self.queue_list:
                     values.append('("{}", "{}", {}, {}, "{}")'.format(
