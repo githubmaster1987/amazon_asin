@@ -473,23 +473,25 @@ class AmazonSpider(scrapy.Spider):
                     break
                 elif 'Paid in' in ranking_str:
                     # print('+++++++++++++++++++++++', ranking_str)
+
                     if self.selected_category_index == self.CATEGORY_BOOK:
-                        link = response.urljoin(response.xpath(
-                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Paperback")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Hardcover")]/../@href').extract_first())
+                        link = response.xpath(
+                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Paperback")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Hardcover")]/../@href').extract_first()
                     elif self.selected_category_index == self.CATEGORY_CD:
-                        link = response.urljoin(response.xpath(
-                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Audio CD")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Vinyl") and not(contains(text(), "Vinyl Bound"))]/../@href').extract_first())
+                        link = response.xpath(
+                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Audio CD")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Vinyl") and not(contains(text(), "Vinyl Bound"))]/../@href').extract_first()
                     elif self.selected_category_index == self.CATEGORY_DVD:
-                        link = response.urljoin(response.xpath(
-                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Multi-Format")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "3D")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "DVD")]/../@href').extract_first())
+                        link = response.xpath(
+                            '//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "Multi-Format")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "3D")]/../@href|//div[@id="MediaMatrix"]//li[contains(@class, "swatchElement")]//a/span[contains(text(), "DVD")]/../@href').extract_first()
 
-                    req = self.set_proxies(
-                        link,
-                        self.parse_detail_page, self.headers)
+                    if link is not None:
+                        req = self.set_proxies(
+                            link,
+                            self.parse_detail_page, self.headers)
 
-                    yield req
+                        yield req
 
-                    return
+                        return
 
             if (ranking is None) or (ranking == ""):
                 print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
