@@ -101,6 +101,16 @@ class AmazonSpider(scrapy.Spider):
         # yield req
         # return
 
+        # url = "https://www.amazon.com/s?i=movies-tv&bbn=2650371011&rh=n%3A2625373011%2Cp_n_theme_browse-bin%3A2650371011%2Cp_n_format_browse-bin%3A2650304011%7C2650305011&dc&fst=as%3Aoff&qid=1552601740&rnid=2650303011&ref=sr_nr_p_n_format_browse-bin_2" + self.url_attach
+        # req = self.set_proxies(
+        #     url,
+        #     self.parse_second_category, self.headers)
+
+        # req.meta["title"] = "ttttt"
+        # req.meta["link"] = url
+        # yield req
+        # return
+
         processname = "scrapy crawl amazon -a category_index={} -a instance_index={} -a instance_count={}".format(self.selected_category_index, self.instance_index, self.instance_count)
 
         if self.is_category == 1:
@@ -195,6 +205,10 @@ class AmazonSpider(scrapy.Spider):
         menu_lists = response.xpath(
             '//ul[contains(@class, "a-unordered-list a-nostyle a-vertical s-ref-indent-two")]//li/span/a')
 
+        if self.selected_category_index == self.CATEGORY_DVD:
+            menu_lists = response.xpath(
+                '//ul[contains(@class, "a-unordered-list a-nostyle a-vertical s-ref-indent-two")]//li/span/a|//div[@id="priceRefinements"]/ul[contains(@class, "a-unordered-list a-nostyle a-vertical")]/li/span/a')
+
         captcha = response.xpath(
             '//form[@action="/errors/validateCaptcha"]')
 
@@ -220,7 +234,16 @@ class AmazonSpider(scrapy.Spider):
             yield req
             return
 
-        if len(menu_lists) == 0:
+        is_continue = True
+        if self.selected_category_index == self.CATEGORY_DVD:
+            for obj in menu_lists:
+                title = obj.xpath("span/text()").extract_first("")
+
+                if "Any Price" in title:
+                    is_continue = False
+
+        # print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXX', is_continue)
+        if (len(menu_lists) == 0) or (is_continue is False):
             total_count_str = response.xpath(
                 '//span[@id="s-result-count"]/text()').extract_first()
 
@@ -259,7 +282,7 @@ class AmazonSpider(scrapy.Spider):
             total_count = None
             try:
                 total_count = re.search(
-                    "([\d,]+)\sresults", total_count_str, re.I | re.S | re.M).group(1)
+                    "([\d,]+)\sresult", total_count_str, re.I | re.S | re.M).group(1)
 
                 total_count = total_count.replace(",", '')
             except Exception as e:
@@ -342,12 +365,15 @@ class AmazonSpider(scrapy.Spider):
 
             print(' -> Total: ', total_count)
 
+        if is_continue is False:
+            return
+
         for obj in menu_lists:
             title = obj.xpath("span/text()").extract_first("")
             link = response.urljoin(obj.xpath("@href").extract_first(""))
 
-            # print('-------------------------->')
-            # print(title, link)
+            print('--------------------------><------------------------------------')
+            print(title, link)
             req = self.set_proxies(
                 link,
                 self.parse_second_category, self.headers)
