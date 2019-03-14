@@ -75,7 +75,7 @@ class AmazonSpider(scrapy.Spider):
         req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
         user_agent = choice(self.useragent_lists)
-        # req.headers['User-Agent'] = user_agent
+        req.headers['User-Agent'] = user_agent
         return req
 
     def __init__(self, category_index=0, instance_index=0, instance_count=10, is_category=0, *args, **kwargs):
@@ -87,6 +87,7 @@ class AmazonSpider(scrapy.Spider):
 
     def start_requests(self):
         # url = "https://www.amazon.com/Iron-Man-Movie-Collection-Blu-ray/dp/B00FFBA87E/ref=sr_1_36?fst=as%3Aoff&qid=1552360042&refinements=p_n_theme_browse-bin%3A2650363011%2Cp_n_format_browse-bin%3A2650304011%7C2650305011%7C2650307011&rnid=2650303011&s=movies-tv&sr=1-36"
+        # url = "https://www.amazon.com/Unashamed-Baggage-Freedom-Fulfill-Destiny-ebook/dp/B010RAI5PY/ref=sr_1_324?pf_rd_i=2625373011&pf_rd_m=ATVPDKIKX0DER&pf_rd_p=1ab24294-eb2f-4d08-add5-bdad814d1a69&pf_rd_r=04HN8VASC5MFSRTNSHZ8&pf_rd_s=merchandised-search-left-3&pf_rd_t=101&qid=1552519204&refinements=p_n_theme_browse-bin%3A2676835011%2Cp_n_format_browse-bin%3A2650304011|2650305011|2650307011|2650308011&s=movies-tv&sr=1-324"
         # req = self.set_proxies(
         #         url,
         #         self.parse_detail_page, self.headers)
@@ -486,7 +487,7 @@ class AmazonSpider(scrapy.Spider):
 
                     if link is not None:
                         req = self.set_proxies(
-                            link,
+                            response.join(link),
                             self.parse_detail_page, self.headers)
 
                         yield req
