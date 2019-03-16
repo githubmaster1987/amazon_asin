@@ -221,7 +221,7 @@ class AmazonSpider(scrapy.Spider):
             print(response.meta)
             print(response.url)
 
-            with open("captcha.html", 'w') as f:
+            with open("logs/captcha.html", 'w') as f:
                 f.write(response.text)
 
             req = self.set_proxies(
@@ -265,7 +265,7 @@ class AmazonSpider(scrapy.Spider):
             if (total_count_str is None) or (total_count_str == ""):
                 print('================= total is none =======================')
                 print(response.url)
-                with open("response.html", 'w') as f:
+                with open("logs/response.html", 'w') as f:
                     f.write(response.text)
 
                 # req = self.set_proxies(
@@ -308,7 +308,7 @@ class AmazonSpider(scrapy.Spider):
             else:
                 print('================ dvd title is none ========================')
                 print(response.url)
-                with open("title.html", 'w') as f:
+                with open("logs/title.html", 'w') as f:
                     f.write(response.text)
 
                 return
@@ -316,7 +316,7 @@ class AmazonSpider(scrapy.Spider):
             if category_title == "":
                 print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
                 print(response.url)
-                with open("title.html", 'w') as f:
+                with open("logs/title.html", 'w') as f:
                     f.write(response.text)
 
                 return
@@ -406,7 +406,7 @@ class AmazonSpider(scrapy.Spider):
             print('??????????????????????????????')
             print(response.url)
 
-            with open("link.html", 'w') as f:
+            with open("logs/link.html", 'w') as f:
                 f.write(response.text)
 
             return
@@ -473,14 +473,14 @@ class AmazonSpider(scrapy.Spider):
             print(response.url)
             print('-----Asin----', asin, isbn_10)
 
-            with open("empty.html", 'w') as f:
+            with open("logs/empty.html", 'w') as f:
                 f.write(response.text)
 
         td_ranking = xpath_obj.xpath(
             '//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "Best Sellers Rank")]/../td/text()').extract_first()
 
-        print('??????????????????????????????? Asin ?????????????????????????????')
-        print(asin, td_ranking)
+        # print('??????????????????????????????? Asin ?????????????????????????????')
+        # print(asin, td_ranking)
 
         if td_ranking is not None:
             ranking = td_ranking.replace(",", '')
@@ -500,7 +500,7 @@ class AmazonSpider(scrapy.Spider):
                 elif self.selected_category_index == self.CATEGORY_DVD:
                     ranking_category_string = 'in Movies & TV'
 
-                print(ranking_str, ranking_category_string)
+                # print(ranking_str, ranking_category_string)
                 if ranking_category_string in ranking_str:
                     ranking = re.search(
                         "#([\d,]+)\sin", ranking_str, re.I | re.S | re.M).group(1)
@@ -540,7 +540,8 @@ class AmazonSpider(scrapy.Spider):
                     except Exception as e:
                         print(e)
 
-                    with open("logs/no_ranking{}.html".format(dp), 'w') as f:
+                    # with open("logs/no_ranking_{}.html".format(dp), 'w') as f:
+                    with open("logs/no_ranking.html", 'w') as f:
                         f.write(response.text)
                 return
 
@@ -565,9 +566,7 @@ class AmazonSpider(scrapy.Spider):
         self.db_scraped_count += 1
         deltatime = datetime.now() - self.starttime
 
-        print(' -----------> Time:', deltatime.__str__())
-        print(' -----------> Obj:', obj["ranking"], obj["asin"], self.selected_category_index)
-        print(' -----------> DB Total: ', self.db_total_count,
+        print(' -----------> Time:', deltatime.__str__(), ' -----------> Obj:', obj["ranking"], obj["asin"], self.selected_category_index, ' -----------> DB Total: ', self.db_total_count,
               ' ---------> Scraped:', self.db_scraped_count)
 
         if len(self.queue_list) > randint(30, 100):
