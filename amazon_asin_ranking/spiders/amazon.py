@@ -566,7 +566,8 @@ class AmazonSpider(scrapy.Spider):
         self.db_scraped_count += 1
         deltatime = datetime.now() - self.starttime
 
-        print(' -----------> Time:', deltatime.__str__(), ' -----------> Obj:', obj["ranking"], obj["asin"], self.selected_category_index, ' -----------> DB Total: ', self.db_total_count,
+        print(' -----------> Time:', deltatime.__str__())
+        print(' -----------> Obj:', obj["ranking"], obj["asin"], self.selected_category_index, ' -----------> DB Total: ', self.db_total_count,
               ' ---------> Scraped:', self.db_scraped_count)
 
         if len(self.queue_list) > randint(30, 100):
