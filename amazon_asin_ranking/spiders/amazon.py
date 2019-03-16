@@ -525,7 +525,13 @@ class AmazonSpider(scrapy.Spider):
                 print(response.url)
                 print(ranking_list)
 
-                with open("empty1.html", 'w') as f:
+                dp = ""
+                try:
+                    dp = response.url.split('/dp/')[1].split('/')[0]
+                except Exception as e:
+                    print(e)
+
+                with open("logs/no_ranking{}.html".format(dp), 'w') as f:
                     f.write(response.text)
                 return
 
