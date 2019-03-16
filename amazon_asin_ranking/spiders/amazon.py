@@ -18,7 +18,7 @@ from datetime import date
 from scrapy.http import Request, FormRequest
 from .models import model
 from .mysql_manage import *
-
+from scrapy.selector import Selector
 
 class AmazonSpider(scrapy.Spider):
     name = 'amazon'
@@ -75,6 +75,9 @@ class AmazonSpider(scrapy.Spider):
         req.headers['Proxy-Authorization'] = 'Basic ' + user_pass
 
         user_agent = choice(self.useragent_lists)
+        # user_agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_2_1 like Mac OS X) AppleWebKit/602.4.6 (KHTML, like Gecko) Version/10.0 Mobile/14D27 Safari/602.1"
+        print(user_agent)
+
         req.headers['User-Agent'] = user_agent
         return req
 
@@ -87,7 +90,7 @@ class AmazonSpider(scrapy.Spider):
 
     def start_requests(self):
         # url = "https://www.amazon.com/Iron-Man-Movie-Collection-Blu-ray/dp/B00FFBA87E/ref=sr_1_36?fst=as%3Aoff&qid=1552360042&refinements=p_n_theme_browse-bin%3A2650363011%2Cp_n_format_browse-bin%3A2650304011%7C2650305011%7C2650307011&rnid=2650303011&s=movies-tv&sr=1-36"
-        # url = "https://www.amazon.com/Unashamed-Baggage-Freedom-Fulfill-Destiny-ebook/dp/B010RAI5PY/ref=sr_1_324?pf_rd_i=2625373011&pf_rd_m=ATVPDKIKX0DER&pf_rd_p=1ab24294-eb2f-4d08-add5-bdad814d1a69&pf_rd_r=04HN8VASC5MFSRTNSHZ8&pf_rd_s=merchandised-search-left-3&pf_rd_t=101&qid=1552519204&refinements=p_n_theme_browse-bin%3A2676835011%2Cp_n_format_browse-bin%3A2650304011|2650305011|2650307011|2650308011&s=movies-tv&sr=1-324"
+        # url = "https://www.amazon.com/dp/B00A703VZY"
         # req = self.set_proxies(
         #         url,
         #         self.parse_detail_page, self.headers)
@@ -448,13 +451,18 @@ class AmazonSpider(scrapy.Spider):
 
             return
 
-        isbn_10 = response.xpath(
+        xpath_obj = response.selector
+        if '<!-->' in response.text:
+            content = response.text.replace('<!-->', '')
+            xpath_obj = Selector(text=content)
+
+        isbn_10 = xpath_obj.xpath(
             '//div[@class="content"]/ul/li/b[contains(text(), "ISBN-10:")]/../text()|//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "ISBN-10")]/../td/text()').extract_first()
 
         if isbn_10 is None:
             isbn_10 = ''
 
-        asin = response.xpath(
+        asin = xpath_obj.xpath(
             '//div[@class="content"]/ul/li/b[contains(text(), "ASIN:")]/../text()|//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "ASIN")]/../td/text()').extract_first()
 
         if asin is None:
@@ -468,11 +476,11 @@ class AmazonSpider(scrapy.Spider):
             with open("empty.html", 'w') as f:
                 f.write(response.text)
 
-        td_ranking = response.xpath(
+        td_ranking = xpath_obj.xpath(
             '//table[contains(@id, "productDetails_techSpec")]//th[contains(text(), "Best Sellers Rank")]/../td/text()').extract_first()
 
-        # print('??????????????????????????????? Asin ?????????????????????????????')
-        # print(asin, td_ranking)
+        print('??????????????????????????????? Asin ?????????????????????????????')
+        print(asin, td_ranking)
 
         if td_ranking is not None:
             ranking = td_ranking.replace(",", '')
@@ -525,14 +533,15 @@ class AmazonSpider(scrapy.Spider):
                 print(response.url)
                 print(ranking_list)
 
-                dp = ""
-                try:
-                    dp = response.url.split('/dp/')[1].split('/')[0]
-                except Exception as e:
-                    print(e)
+                if self.selected_category_index == self.CATEGORY_DVD:
+                    dp = ""
+                    try:
+                        dp = response.url.split('/dp/')[1].split('/')[0]
+                    except Exception as e:
+                        print(e)
 
-                with open("logs/no_ranking{}.html".format(dp), 'w') as f:
-                    f.write(response.text)
+                    with open("logs/no_ranking{}.html".format(dp), 'w') as f:
+                        f.write(response.text)
                 return
 
         obj = {'asin': asin.strip(), 'isbn_10': isbn_10.strip(),
